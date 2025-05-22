@@ -2,8 +2,9 @@ import streamlit as st
 import pdfplumber
 from docx import Document
 import os
+import io 
 from io import StringIO
-import requests  # <-- added
+import requests
 
 st.set_page_config(
     page_title="Advanced Text Extractor",
@@ -46,20 +47,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def extract_pdf_text(file):
-    """Extracts text from PDF (all pages)."""
-    full_text = ""
-    try:
-        with pdfplumber.open(file) as pdf:
-            for page in pdf.pages:
-                full_text += page.extract_text() + "\n\n"
-        return full_text.strip()
-    except Exception as e:
-        st.error(f"Failed to read PDF: {str(e)}")
-        return None
 
 def extract_docx_text(file):
-    """Extracts text from DOCX files."""
     try:
         doc = Document(file)
         return "\n".join([para.text for para in doc.paragraphs])
@@ -67,16 +56,16 @@ def extract_docx_text(file):
         st.error(f"Failed to read DOCX: {str(e)}")
         return None
 
+
 def extract_txt_text(file):
-    """Extracts text from TXT files."""
     try:
         return file.read().decode("utf-8")
     except Exception as e:
         st.error(f"Failed to read TXT: {str(e)}")
         return None
 
+
 def save_text_to_file(text, filename):
-    """Saves extracted text to a downloadable file."""
     output = StringIO()
     output.write(text)
     return output.getvalue().encode("utf-8")
@@ -87,7 +76,7 @@ def main():
     st.markdown("Upload a **PDF, DOCX, or TXT** file to extract its text.")
 
     uploaded_file = st.file_uploader(
-        "Choose a file", 
+        "Choose a file",
         type=["pdf", "docx", "txt"],
         accept_multiple_files=False
     )
@@ -102,10 +91,23 @@ def main():
         st.write(file_details)
 
         text = None
+
         if uploaded_file.type == "application/pdf":
-            text = extract_pdf_text(uploaded_file)
+            try:
+                files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
+                response = requests.post("http://localhost:8000/extract-pdf/", files=files)
+
+                if response.status_code == 200:
+                    text = response.json().get("extracted_text", "")
+                    st.success("✅ Extracted text received from API!")
+                else:
+                    st.error(f"❌ API Error: {response.status_code} - {response.text}")
+            except Exception as e:
+                st.error(f"🚫 Failed to connect to the API: {e}")
+
         elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             text = extract_docx_text(uploaded_file)
+
         elif uploaded_file.type == "text/plain":
             text = extract_txt_text(uploaded_file)
 
@@ -120,18 +122,6 @@ def main():
                 mime="text/plain"
             )
 
-
-        try:
-            files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
-            response = requests.post("YOUR_API_ENDPOINT", files=files)
-
-            if response.status_code == 200:
-                st.success("File uploaded to API successfully!")
-                
-            else:
-                st.error(f"Upload failed: {response.status_code} {response.text}")
-        except Exception as e:
-            st.error(f"Failed to upload file to API: {e}")
 
 if __name__ == "__main__":
     main()
