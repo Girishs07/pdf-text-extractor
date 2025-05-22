@@ -3,7 +3,7 @@ import pdfplumber
 from docx import Document
 import os
 from io import StringIO
-
+import requests  # <-- added
 
 st.set_page_config(
     page_title="Advanced Text Extractor",
@@ -86,7 +86,6 @@ def main():
     st.title("📄 Advanced Text Extractor")
     st.markdown("Upload a **PDF, DOCX, or TXT** file to extract its text.")
 
-    
     uploaded_file = st.file_uploader(
         "Choose a file", 
         type=["pdf", "docx", "txt"],
@@ -102,7 +101,6 @@ def main():
         }
         st.write(file_details)
 
-        
         text = None
         if uploaded_file.type == "application/pdf":
             text = extract_pdf_text(uploaded_file)
@@ -111,18 +109,30 @@ def main():
         elif uploaded_file.type == "text/plain":
             text = extract_txt_text(uploaded_file)
 
-        
         if text:
             st.subheader("Extracted Text")
             st.text_area("Content", text, height=300)
 
-            
             st.download_button(
                 label="📥 Download Text",
                 data=save_text_to_file(text, uploaded_file.name),
                 file_name=f"extracted_{os.path.splitext(uploaded_file.name)[0]}.txt",
                 mime="text/plain"
             )
+
+        # --- Upload to API ---
+        try:
+            files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
+            response = requests.post("YOUR_API_ENDPOINT", files=files)
+
+            if response.status_code == 200:
+                st.success("File uploaded to API successfully!")
+                # Optionally show response content here:
+                # st.write(response.json())
+            else:
+                st.error(f"Upload failed: {response.status_code} {response.text}")
+        except Exception as e:
+            st.error(f"Failed to upload file to API: {e}")
 
 if __name__ == "__main__":
     main()
