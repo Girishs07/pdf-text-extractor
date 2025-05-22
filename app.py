@@ -120,15 +120,14 @@ def main():
                 mime="text/plain"
             )
 
-        # --- Upload to API ---
+
         try:
             files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
             response = requests.post("YOUR_API_ENDPOINT", files=files)
 
             if response.status_code == 200:
                 st.success("File uploaded to API successfully!")
-                # Optionally show response content here:
-                # st.write(response.json())
+                
             else:
                 st.error(f"Upload failed: {response.status_code} {response.text}")
         except Exception as e:
