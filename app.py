@@ -11,6 +11,41 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+    <style>
+        .main {
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+        .stButton>button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+        .stDownloadButton>button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+        .stTextArea textarea {
+            background-color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 def extract_pdf_text(file):
     """Extracts text from PDF (all pages)."""
     full_text = ""
