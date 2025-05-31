@@ -95,7 +95,7 @@ def main():
         if uploaded_file.type == "application/pdf":
             try:
                 files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
-                response = requests.post("http://localhost:8000/extract-pdf/", files=files)
+                response = requests.post("http://127.0.0.1:8000/extract-pdf/", files=files)
 
                 if response.status_code == 200:
                     text = response.json().get("extracted_text", "")
