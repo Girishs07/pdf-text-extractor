@@ -12,7 +12,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "*",  # For development
-        "https://your-app-name.streamlit.app",  # Replace with your actual Streamlit app URL
+        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/",  # Replace with your actual Streamlit app URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
