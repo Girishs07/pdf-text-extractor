@@ -137,7 +137,7 @@ def main():
     with st.sidebar:
         st.header("🔧 System Status")
         try:
-            response = requests.get(f"{BACKEND_URL}/health", timeout=5)
+            response = requests.get(f"{"https://pdf-textextractor.onrender.com"}/health", timeout=5)
             if response.status_code == 200:
                 st.success("✅ Backend API is online")
             else:
