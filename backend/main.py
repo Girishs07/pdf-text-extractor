@@ -10,7 +10,10 @@ app = FastAPI(title="PDF Text Extractor API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your frontend URL
+    allow_origins=[
+        "*",  # For development
+        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/",  # Replace with your actual Streamlit app URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

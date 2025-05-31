@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # Backend API URL - Replace with your actual Render backend URL
-BACKEND_URL = "https://your-actual-backend-url.onrender.com"  # Update this!
+BACKEND_URL = "https://pdf-textextractor.onrender.com"  # Update this!
 
 # Custom CSS styling
 st.markdown("""
