@@ -70,8 +70,11 @@ st.markdown("""
 def extract_pdf_via_api(uploaded_file):
     """Extract text from PDF using the backend API"""
     try:
-        # Prepare file for API request
-        files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+        # Reset file pointer to beginning
+        uploaded_file.seek(0)
+        
+        # Prepare file for API request - FastAPI expects this format
+        files = {"file": (uploaded_file.name, uploaded_file.read(), "application/pdf")}
         
         # Make API request
         with st.spinner("🔄 Processing PDF via API..."):
@@ -86,8 +89,21 @@ def extract_pdf_via_api(uploaded_file):
             st.success(f"✅ PDF processed successfully! Extracted {result.get('characters_extracted', 0)} characters from {result.get('pages_processed', 0)} pages.")
             return result.get("extracted_text", "")
         else:
-            error_msg = response.json().get("detail", "Unknown error") if response.headers.get('content-type') == 'application/json' else response.text
-            st.error(f"❌ API Error ({response.status_code}): {error_msg}")
+            # Enhanced error handling
+            try:
+                error_detail = response.json().get("detail", "Unknown error")
+            except:
+                error_detail = response.text
+            
+            st.error(f"❌ API Error ({response.status_code}): {error_detail}")
+            
+            # Debug information
+            with st.expander("🔍 Debug Information"):
+                st.write(f"**Request URL:** {BACKEND_URL}/extract-pdf")
+                st.write(f"**Response Status:** {response.status_code}")
+                st.write(f"**Response Headers:** {dict(response.headers)}")
+                st.write(f"**Response Text:** {response.text[:500]}")
+            
             return None
             
     except requests.exceptions.Timeout:
