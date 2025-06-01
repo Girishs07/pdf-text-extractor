@@ -5,17 +5,14 @@ import io
 from io import StringIO
 import requests
 
-# Configure Streamlit page
 st.set_page_config(
     page_title="Advanced Text Extractor",
     page_icon="📄",
     layout="wide"
 )
 
-# Backend API URL - Replace with your actual Render backend URL
-BACKEND_URL = "https://pdf-textextractor.onrender.com"  # Update this!
+BACKEND_URL = "https://pdf-textextractor.onrender.com" 
 
-# Custom CSS styling
 st.markdown("""
     <style>
         /* Main app styling */
@@ -158,43 +155,32 @@ st.markdown("""
 def extract_pdf_via_api(uploaded_file):
     """Extract text from PDF using the backend API with robust error handling"""
     try:
-        # Validate file size before sending
         file_size_mb = uploaded_file.size / (1024 * 1024)
         if file_size_mb > 100:
             st.error(f"❌ File too large: {file_size_mb:.1f}MB. Maximum allowed: 100MB")
             return None
         
-        # Reset file pointer to beginning
         uploaded_file.seek(0)
         
-        # Prepare file for API request
         files = {"file": (uploaded_file.name, uploaded_file.read(), "application/pdf")}
         
-        # Show progress and status
         progress_bar = st.progress(0)
         status_text = st.empty()
         
         try:
-            # Step 1: Connecting
             status_text.text("🔄 Connecting to backend...")
             progress_bar.progress(25)
-            
-            # Make API request with retries
             response = requests.post(
                 f"{BACKEND_URL}/extract-pdf", 
                 files=files,
-                timeout=300  # 5 minutes timeout
+                timeout=300  
             )
-            
-            # Step 2: Processing
             status_text.text("🔄 Processing PDF...")
             progress_bar.progress(75)
-            
-            # Step 3: Complete
+    
             progress_bar.progress(100)
             status_text.text("✅ Processing complete!")
             
-            # Clear progress indicators
             import time
             time.sleep(1)
             progress_bar.empty()
@@ -237,15 +223,12 @@ def extract_pdf_via_api(uploaded_file):
             return None
             
         else:
-            # Enhanced error handling with retry option
             try:
                 error_detail = response.json().get("detail", "Unknown error")
             except:
                 error_detail = response.text[:200] + "..." if len(response.text) > 200 else response.text
             
             st.error(f"❌ **API Error ({response.status_code})**: {error_detail}")
-            
-            # Debug information in expander
             with st.expander("🔍 Technical Details"):
                 st.code(f"""
 Status Code: {response.status_code}
@@ -259,8 +242,6 @@ Response: {response.text[:500]}
             
     except Exception as e:
         st.error(f"🚫 **Unexpected error**: {str(e)}")
-        
-        # Show retry button for unexpected errors
         if st.button("🔄 Try Again", key="retry_unexpected"):
             st.experimental_rerun()
         
@@ -296,7 +277,6 @@ def save_text_to_file(text, filename):
     return output.getvalue().encode("utf-8")
 
 def main():
-    # Custom header
     st.markdown("""
         <div class="main-header">
             <h1>📄 Advanced Text Extractor</h1>
@@ -304,11 +284,8 @@ def main():
         </div>
     """, unsafe_allow_html=True)
     
-    # Enhanced sidebar
     with st.sidebar:
         st.markdown("### 🔧 System Status")
-        
-        # Backend status check with better UI
         status_placeholder = st.empty()
         try:
             response = requests.get(f"{BACKEND_URL}/health", timeout=5)
@@ -324,7 +301,6 @@ def main():
         
         st.markdown("---")
         
-        # Feature highlights
         st.markdown("### ✨ Features")
         st.markdown("""
         - 🚀 **Fast Processing** - Quick text extraction
@@ -335,8 +311,6 @@ def main():
         """)
         
         st.markdown("---")
-        
-        # Usage tips
         st.markdown("### 💡 Tips")
         st.markdown("""
         - **PDF files**: Best results with text-based PDFs
@@ -345,13 +319,10 @@ def main():
         - **Retry**: If error occurs, wait 30s and retry
         """)
 
-    # Main content area
     if not backend_online:
         st.warning("⚠️ **Backend service is currently offline.** Please wait a moment and refresh the page.")
         if st.button("🔄 Refresh Status"):
             st.experimental_rerun()
-    
-    # File uploader with improved styling
     st.markdown("### 📁 Upload Your File")
     uploaded_file = st.file_uploader(
         "Choose a file to extract text from",
@@ -361,7 +332,6 @@ def main():
     )
 
     if uploaded_file:
-        # Enhanced file information display
         st.markdown("### 📋 File Information")
         
         col1, col2, col3, col4 = st.columns(4)
@@ -388,7 +358,6 @@ def main():
                 value=file_type_display.get(uploaded_file.type, "Unknown")
             )
         with col4:
-            # Processing status indicator
             if file_size_mb > 50:
                 st.metric(label="⚡ Speed", value="Slow", delta="Large file")
             elif file_size_mb > 10:
@@ -396,7 +365,6 @@ def main():
             else:
                 st.metric(label="⚡ Speed", value="Fast", delta="Small file")
 
-        # File size warning
         if file_size_mb > 100:
             st.error("❌ **File too large!** Please upload a file smaller than 100MB.")
             return
@@ -405,7 +373,6 @@ def main():
 
         text = None
 
-        # Process different file types with improved feedback
         st.markdown("### 🔄 Processing")
         
         if uploaded_file.type == "application/pdf":
@@ -422,11 +389,9 @@ def main():
         else:
             st.error("❌ **Unsupported file type!** Please upload a PDF, DOCX, or TXT file.")
 
-        # Enhanced results display
         if text and text.strip():
             st.markdown("### 📖 Results")
             
-            # Text statistics with better layout
             col1, col2, col3, col4 = st.columns(4)
             
             words = text.split()
@@ -442,7 +407,6 @@ def main():
             with col4:
                 st.metric("📋 Paragraphs", f"{len(paragraphs):,}")
             
-            # Text preview with improved styling
             st.markdown("#### 👀 Text Preview")
             preview_length = st.slider("Preview length (characters)", 100, min(2000, len(text)), 500)
             preview_text = text[:preview_length] + ("..." if len(text) > preview_length else "")
@@ -454,7 +418,7 @@ def main():
                 help="This is a preview of your extracted text. Use the download button to get the full content."
             )
 
-            # Download section with better styling
+            
             st.markdown("### 📥 Download")
             col1, col2 = st.columns([3, 1])
             

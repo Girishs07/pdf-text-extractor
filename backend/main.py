@@ -11,8 +11,8 @@ app = FastAPI(title="PDF Text Extractor API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*",  # For development
-        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/",  # Replace with your actual Streamlit app URL
+        "*",  
+        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/", 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -43,19 +43,16 @@ async def test_upload(file: UploadFile):
 async def extract_pdf(file: UploadFile):
     """Extract text from uploaded PDF file"""
     
-    # Validate file is provided
     if not file:
         raise HTTPException(status_code=400, detail="No file provided")
     
-    # Validate filename exists
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
     
-    # Check file size
     try:
-        file.file.seek(0, 2)  # Move to end of file
+        file.file.seek(0, 2)  
         file_size = file.file.tell()
-        file.file.seek(0)  # Reset to beginning
+        file.file.seek(0)  
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
 
@@ -65,18 +62,15 @@ async def extract_pdf(file: UploadFile):
     if file_size == 0:
         raise HTTPException(status_code=400, detail="File is empty")
 
-    # Check file type
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail=f"Only PDF files are allowed. Received: {file.filename}")
 
     try:
-        # Read file contents
         contents = await file.read()
         
         if not contents:
             raise HTTPException(status_code=400, detail="File content is empty")
         
-        # Extract text using pdfplumber
         with pdfplumber.open(BytesIO(contents)) as pdf:
             if not pdf.pages:
                 raise HTTPException(status_code=400, detail="PDF has no pages")
@@ -87,7 +81,6 @@ async def extract_pdf(file: UploadFile):
                 if page_text:
                     extracted_pages.append(f"--- Page {i+1} ---\n{page_text}")
             
-            # Join all pages
             text = "\n\n".join(extracted_pages)
         
         if not text.strip():
@@ -100,7 +93,7 @@ async def extract_pdf(file: UploadFile):
         }
         
     except HTTPException:
-        raise  # Re-raise HTTP exceptions
+        raise  
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
