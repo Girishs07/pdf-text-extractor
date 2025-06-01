@@ -25,7 +25,7 @@ MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 async def root():
     return {"message": "PDF Text Extractor API is running"}
 
-@app.get("/health")
+@app.get("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "healthy"}
 
