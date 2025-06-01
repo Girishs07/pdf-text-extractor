@@ -4,444 +4,263 @@ import os
 import io 
 from io import StringIO
 import requests
+import json
 
 st.set_page_config(
-    page_title="Advanced Text Extractor",
-    page_icon="📄",
+    page_title="Advanced Text Extractor - Debug Mode",
+    page_icon="🔧",
     layout="wide"
 )
 
 BACKEND_URL = "https://pdf-textextractor.onrender.com" 
 
-st.markdown("""
-    <style>
-        /* Main app styling */
-        .main {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-        }
+# Debug function to test file before processing
+def debug_file_upload(uploaded_file):
+    """Debug the file upload to identify issues"""
+    st.markdown("### 🔍 File Debug Information")
+    
+    debug_info = {}
+    
+    try:
+        # Basic file info
+        debug_info["filename"] = uploaded_file.name
+        debug_info["file_type"] = uploaded_file.type
+        debug_info["file_size"] = uploaded_file.size
+        debug_info["file_size_mb"] = uploaded_file.size / (1024 * 1024)
         
-        /* Header styling */
-        .main-header {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            text-align: center;
-        }
+        # Check file content
+        uploaded_file.seek(0)
+        first_bytes = uploaded_file.read(100)  # Read first 100 bytes
+        uploaded_file.seek(0)  # Reset
         
-        .main-header h1 {
-            color: #2c3e50;
-            font-size: 3em;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        debug_info["first_bytes"] = first_bytes[:50].hex() if first_bytes else "No content"
+        debug_info["is_pdf_header"] = first_bytes.startswith(b'%PDF') if first_bytes else False
         
-        .main-header p {
-            color: #7f8c8d;
-            font-size: 1.2em;
-        }
+        # Display debug info
+        col1, col2 = st.columns(2)
         
-        /* File uploader styling */
-        .stFileUploader {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin: 1rem 0;
-        }
+        with col1:
+            st.json({
+                "filename": debug_info["filename"],
+                "file_type": debug_info["file_type"],
+                "file_size_bytes": debug_info["file_size"],
+                "file_size_mb": round(debug_info["file_size_mb"], 3)
+            })
         
-        /* Button styling */
-        .stButton > button {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-            transition: all 0.3s ease;
-        }
+        with col2:
+            st.json({
+                "has_pdf_header": debug_info["is_pdf_header"],
+                "first_bytes_hex": debug_info["first_bytes"],
+                "validations": {
+                    "has_filename": bool(debug_info["filename"]),
+                    "is_pdf_extension": debug_info["filename"].lower().endswith('.pdf'),
+                    "size_under_100mb": debug_info["file_size_mb"] < 100,
+                    "not_empty": debug_info["file_size"] > 0
+                }
+            })
         
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-        }
+        return debug_info
         
-        .stDownloadButton > button {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .stDownloadButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-        }
-        
-        /* Text area styling */
-        .stTextArea textarea {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: #333;
-            padding: 15px;
-        }
-        
-        /* Metric cards */
-        .metric-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-            margin: 0.5rem;
-        }
-        
-        /* Sidebar styling */
-        .css-1d391kg {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        /* Success/Error styling */
-        .stSuccess {
-            background: linear-gradient(90deg, #d4edda, #c3e6cb);
-            border-left: 5px solid #28a745;
-            border-radius: 5px;
-            padding: 1rem;
-        }
-        
-        .stError {
-            background: linear-gradient(90deg, #f8d7da, #f5c6cb);
-            border-left: 5px solid #dc3545;
-            border-radius: 5px;
-            padding: 1rem;
-        }
-        
-        /* Loading animation */
-        .loading-text {
-            font-size: 1.2em;
-            color: #667eea;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        /* File info cards */
-        .file-info-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 1rem;
-            border-radius: 10px;
-            margin: 0.5rem 0;
-        }
-    </style>
-""", unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Debug error: {str(e)}")
+        return None
 
-def extract_pdf_via_api(uploaded_file):
-    """Extract text from PDF using the backend API with robust error handling"""
+def test_backend_debug_endpoint(uploaded_file):
+    """Test the backend debug endpoint"""
+    st.markdown("### 🔧 Backend Debug Test")
+    
+    try:
+        uploaded_file.seek(0)
+        files = {"file": (uploaded_file.name, uploaded_file.read(), uploaded_file.type)}
+        
+        with st.spinner("Testing backend debug endpoint..."):
+            response = requests.post(
+                f"{BACKEND_URL}/debug-upload",
+                files=files,
+                timeout=30
+            )
+        
+        st.markdown("#### Backend Response:")
+        if response.status_code == 200:
+            st.success(f"✅ Debug endpoint successful (Status: {response.status_code})")
+            st.json(response.json())
+        else:
+            st.error(f"❌ Debug endpoint failed (Status: {response.status_code})")
+            try:
+                st.json(response.json())
+            except:
+                st.text(response.text)
+                
+        return response
+        
+    except Exception as e:
+        st.error(f"Debug endpoint error: {str(e)}")
+        return None
+
+def extract_pdf_via_api_debug(uploaded_file):
+    """Extract text from PDF using the backend API with enhanced debugging"""
     try:
         file_size_mb = uploaded_file.size / (1024 * 1024)
-        if file_size_mb > 100:
-            st.error(f"❌ File too large: {file_size_mb:.1f}MB. Maximum allowed: 100MB")
+        
+        st.markdown("### 📊 Pre-Upload Validation")
+        
+        # Pre-validation checks
+        validations = {
+            "File exists": uploaded_file is not None,
+            "Has filename": bool(uploaded_file.name),
+            "Is PDF extension": uploaded_file.name.lower().endswith('.pdf'),
+            "Size under 100MB": file_size_mb < 100,
+            "Not empty": uploaded_file.size > 0,
+            "Correct MIME type": uploaded_file.type == "application/pdf"
+        }
+        
+        for check, passed in validations.items():
+            if passed:
+                st.success(f"✅ {check}")
+            else:
+                st.error(f"❌ {check}")
+        
+        if not all(validations.values()):
+            st.error("❌ Pre-validation failed. Cannot proceed with upload.")
             return None
+        
+        st.markdown("### 🚀 Uploading to Backend")
         
         uploaded_file.seek(0)
         
+        # Prepare the exact same request as before
         files = {"file": (uploaded_file.name, uploaded_file.read(), "application/pdf")}
         
         progress_bar = st.progress(0)
         status_text = st.empty()
         
         try:
-            status_text.text("🔄 Connecting to backend...")
+            status_text.text("🔄 Sending request to backend...")
             progress_bar.progress(25)
+            
+            # Make the request with more detailed error handling
             response = requests.post(
                 f"{BACKEND_URL}/extract-pdf", 
                 files=files,
-                timeout=300  
+                timeout=300
             )
-            status_text.text("🔄 Processing PDF...")
-            progress_bar.progress(75)
-    
-            progress_bar.progress(100)
-            status_text.text("✅ Processing complete!")
             
+            progress_bar.progress(75)
+            status_text.text("🔄 Processing response...")
+            
+            st.markdown("### 📋 Backend Response Details")
+            st.write(f"**Status Code:** {response.status_code}")
+            st.write(f"**Response Headers:** {dict(response.headers)}")
+            
+            progress_bar.progress(100)
+            status_text.text("✅ Request completed!")
+            
+            # Clear progress indicators
             import time
             time.sleep(1)
             progress_bar.empty()
             status_text.empty()
             
+            # Handle response based on status code
+            if response.status_code == 200:
+                result = response.json()
+                st.success(f"✅ **Success!** Extracted {result.get('characters_extracted', 0):,} characters from {result.get('pages_processed', 0)} pages.")
+                return result.get("extracted_text", "")
+                
+            else:
+                st.error(f"❌ **Request failed with status code {response.status_code}**")
+                
+                # Show detailed error information
+                st.markdown("#### Error Details:")
+                try:
+                    error_data = response.json()
+                    st.json(error_data)
+                except:
+                    st.text(response.text)
+                
+                # Show request details for debugging
+                with st.expander("🔍 Request Debug Information"):
+                    st.json({
+                        "url": f"{BACKEND_URL}/extract-pdf",
+                        "method": "POST",
+                        "file_info": {
+                            "name": uploaded_file.name,
+                            "size": uploaded_file.size,
+                            "type": uploaded_file.type
+                        },
+                        "response_status": response.status_code,
+                        "response_headers": dict(response.headers)
+                    })
+                
+                return None
+            
         except requests.exceptions.Timeout:
             progress_bar.empty()
             status_text.empty()
-            st.error("🚫 **Request timed out** - The PDF might be too large or complex. Try a smaller file or try again later.")
+            st.error("🚫 **Request timed out** - The PDF might be too large or complex.")
             return None
+            
         except requests.exceptions.ConnectionError:
             progress_bar.empty()
             status_text.empty()
-            st.error("🚫 **Connection failed** - Backend service might be sleeping. Please wait 30 seconds and try again.")
-            
-            # Add retry button
-            if st.button("🔄 Retry Request", key="retry_connection"):
-                st.experimental_rerun()
-            return None
-
-        if response.status_code == 200:
-            result = response.json()
-            st.success(f"✅ **Success!** Extracted {result.get('characters_extracted', 0):,} characters from {result.get('pages_processed', 0)} pages.")
-            return result.get("extracted_text", "")
-            
-        elif response.status_code == 413:
-            st.error("❌ **File too large** - Please use a smaller PDF file (max 100MB)")
+            st.error("🚫 **Connection failed** - Cannot reach the backend service.")
             return None
             
-        elif response.status_code == 400:
-            try:
-                error_detail = response.json().get("detail", "Bad request")
-                st.error(f"❌ **Invalid file**: {error_detail}")
-            except:
-                st.error("❌ **Invalid file** - Please ensure you're uploading a valid PDF file")
-            return None
-            
-        elif response.status_code == 500:
-            st.error("❌ **Server error** - There was an issue processing your PDF. Please try again.")
-            return None
-            
-        else:
-            try:
-                error_detail = response.json().get("detail", "Unknown error")
-            except:
-                error_detail = response.text[:200] + "..." if len(response.text) > 200 else response.text
-            
-            st.error(f"❌ **API Error ({response.status_code})**: {error_detail}")
-            with st.expander("🔍 Technical Details"):
-                st.code(f"""
-Status Code: {response.status_code}
-Request URL: {BACKEND_URL}/extract-pdf
-File Name: {uploaded_file.name}
-File Size: {file_size_mb:.1f}MB
-Response: {response.text[:500]}
-                """)
-            
+        except Exception as e:
+            progress_bar.empty()
+            status_text.empty()
+            st.error(f"🚫 **Unexpected error**: {str(e)}")
             return None
             
     except Exception as e:
-        st.error(f"🚫 **Unexpected error**: {str(e)}")
-        if st.button("🔄 Try Again", key="retry_unexpected"):
-            st.experimental_rerun()
-        
+        st.error(f"🚫 **Function error**: {str(e)}")
         return None
-
-def extract_docx_text(file):
-    """Extract text from DOCX file"""
-    try:
-        with st.spinner("🔄 Processing DOCX file..."):
-            doc = Document(file)
-            text = "\n".join([para.text for para in doc.paragraphs])
-            st.success("✅ DOCX file processed successfully!")
-            return text
-    except Exception as e:
-        st.error(f"Failed to read DOCX: {str(e)}")
-        return None
-
-def extract_txt_text(file):
-    """Extract text from TXT file"""
-    try:
-        with st.spinner("🔄 Processing TXT file..."):
-            text = file.read().decode("utf-8")
-            st.success("✅ TXT file processed successfully!")
-            return text
-    except Exception as e:
-        st.error(f"Failed to read TXT: {str(e)}")
-        return None
-
-def save_text_to_file(text, filename):
-    """Prepare text for download"""
-    output = StringIO()
-    output.write(text)
-    return output.getvalue().encode("utf-8")
 
 def main():
     st.markdown("""
-        <div class="main-header">
-            <h1>📄 Advanced Text Extractor</h1>
-            <p>Extract text from <strong>PDF, DOCX, and TXT</strong> files with ease</p>
-        </div>
-    """, unsafe_allow_html=True)
+        # 🔧 PDF Text Extractor - Debug Mode
+        This version includes enhanced debugging to identify the AxiosError 400 issue.
+    """)
     
+    # Backend status check
     with st.sidebar:
-        st.markdown("### 🔧 System Status")
-        status_placeholder = st.empty()
+        st.markdown("### 🔧 Backend Status")
         try:
             response = requests.get(f"{BACKEND_URL}/health", timeout=5)
             if response.status_code == 200:
-                status_placeholder.success("✅ Backend API is online")
+                st.success("✅ Backend API is online")
                 backend_online = True
             else:
-                status_placeholder.error("❌ Backend API has issues")
+                st.error(f"❌ Backend API returned {response.status_code}")
                 backend_online = False
-        except:
-            status_placeholder.error("❌ Backend API is offline")
+        except Exception as e:
+            st.error(f"❌ Backend API is offline: {str(e)}")
             backend_online = False
-        
-        st.markdown("---")
-        
-        st.markdown("### ✨ Features")
-        st.markdown("""
-        - 🚀 **Fast Processing** - Quick text extraction
-        - 📊 **Multiple Formats** - PDF, DOCX, TXT support  
-        - 📈 **File Statistics** - Character, word, line counts
-        - 💾 **Download Results** - Save extracted text
-        - 🔒 **Secure** - Files processed safely
-        """)
-        
-        st.markdown("---")
-        st.markdown("### 💡 Tips")
-        st.markdown("""
-        - **PDF files**: Best results with text-based PDFs
-        - **File size**: Keep under 100MB for faster processing
-        - **Network**: Good connection recommended
-        - **Retry**: If error occurs, wait 30s and retry
-        """)
-
-    if not backend_online:
-        st.warning("⚠️ **Backend service is currently offline.** Please wait a moment and refresh the page.")
-        if st.button("🔄 Refresh Status"):
-            st.experimental_rerun()
-    st.markdown("### 📁 Upload Your File")
+    
+    st.markdown("### 📁 Upload Your PDF File")
     uploaded_file = st.file_uploader(
-        "Choose a file to extract text from",
-        type=["pdf", "docx", "txt"],
+        "Choose a PDF file",
+        type=["pdf"],
         accept_multiple_files=False,
-        help="Select a PDF, DOCX, or TXT file. Maximum size: 100MB"
+        help="Select a PDF file for debugging"
     )
 
     if uploaded_file:
-        st.markdown("### 📋 File Information")
+        # Debug the uploaded file
+        debug_info = debug_file_upload(uploaded_file)
         
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric(
-                label="📄 File Name", 
-                value=uploaded_file.name[:20] + "..." if len(uploaded_file.name) > 20 else uploaded_file.name
-            )
-        with col2:
-            file_size_mb = uploaded_file.size / (1024 * 1024)
-            st.metric(
-                label="📊 File Size", 
-                value=f"{file_size_mb:.2f} MB" if file_size_mb >= 1 else f"{uploaded_file.size / 1024:.1f} KB"
-            )
-        with col3:
-            file_type_display = {
-                "application/pdf": "PDF Document",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word Document",
-                "text/plain": "Text File"
-            }
-            st.metric(
-                label="📝 Type", 
-                value=file_type_display.get(uploaded_file.type, "Unknown")
-            )
-        with col4:
-            if file_size_mb > 50:
-                st.metric(label="⚡ Speed", value="Slow", delta="Large file")
-            elif file_size_mb > 10:
-                st.metric(label="⚡ Speed", value="Medium", delta=None)
-            else:
-                st.metric(label="⚡ Speed", value="Fast", delta="Small file")
-
-        if file_size_mb > 100:
-            st.error("❌ **File too large!** Please upload a file smaller than 100MB.")
-            return
-        elif file_size_mb > 50:
-            st.warning("⚠️ **Large file detected.** Processing may take longer than usual.")
-
-        text = None
-
-        st.markdown("### 🔄 Processing")
-        
-        if uploaded_file.type == "application/pdf":
-            if not backend_online:
-                st.error("❌ Cannot process PDF: Backend service is offline")
-                return
-            text = extract_pdf_via_api(uploaded_file)
+        if debug_info:
+            st.markdown("---")
             
-        elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            text = extract_docx_text(uploaded_file)
+            # Test backend debug endpoint
+            if st.button("🔧 Test Backend Debug Endpoint"):
+                test_backend_debug_endpoint(uploaded_file)
             
-        elif uploaded_file.type == "text/plain":
-            text = extract_txt_text(uploaded_file)
-        else:
-            st.error("❌ **Unsupported file type!** Please upload a PDF, DOCX, or TXT file.")
-
-        if text and text.strip():
-            st.markdown("### 📖 Results")
+            st.markdown("---")
             
-            col1, col2, col3, col4 = st.columns(4)
-            
-            words = text.split()
-            lines = text.split('\n')
-            paragraphs = [p for p in text.split('\n\n') if p.strip()]
-            
-            with col1:
-                st.metric("📝 Characters", f"{len(text):,}")
-            with col2:
-                st.metric("📊 Words", f"{len(words):,}")
-            with col3:
-                st.metric("📄 Lines", f"{len(lines):,}")
-            with col4:
-                st.metric("📋 Paragraphs", f"{len(paragraphs):,}")
-            
-            st.markdown("#### 👀 Text Preview")
-            preview_length = st.slider("Preview length (characters)", 100, min(2000, len(text)), 500)
-            preview_text = text[:preview_length] + ("..." if len(text) > preview_length else "")
-            
-            st.text_area(
-                "Extracted Content", 
-                preview_text, 
-                height=300,
-                help="This is a preview of your extracted text. Use the download button to get the full content."
-            )
-
-            
-            st.markdown("### 📥 Download")
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.markdown("**Ready to download your extracted text?**")
-                st.markdown(f"Full text contains {len(text):,} characters")
-            
-            with col2:
-                st.download_button(
-                    label="📥 Download Full Text",
-                    data=save_text_to_file(text, uploaded_file.name),
-                    file_name=f"extracted_{os.path.splitext(uploaded_file.name)[0]}.txt",
-                    mime="text/plain",
-                    help="Download the complete extracted text as a .txt file"
-                )
-            
-        elif text is not None:
-            st.warning("⚠️ **No text content found** in the uploaded file. The file might be:")
-            st.markdown("""
-            - An image-based PDF (scanned document)
-            - An empty or corrupted file
-            - A file with only images or graphics
-            """)
+            # Process with main endpoint
+            if st.button("🚀 Process PDF (Main Endpoint)"):
+                extract_pdf_via_api_debug(uploaded_file)
 
 if __name__ == "__main__":
-    main()  
+    main()
