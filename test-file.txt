@@ -1,0 +1,7 @@
+This is a test file for PDF Text Extractor.
+
+This text was extracted successfully from a test document.
+
+The frontend is now properly connected to the backend API.
+
+Testing file upload and text extraction functionality.
