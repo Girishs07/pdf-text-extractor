@@ -12,7 +12,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "*",  
-        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/", 
+        "https://pdf-text-extractor-2aombhdbxej9fyhxqmhr8m.streamlit.app/",
+        "https://pdf-text-extractor-mocha.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
