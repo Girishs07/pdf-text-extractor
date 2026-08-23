@@ -67,10 +67,10 @@ function FileUploader({ onFileUpload, isLoading, uploadedFile }) {
         />
 
         <div className="upload-content">
-          <div className="upload-icon">📤</div>
-          <h3 className="upload-title">Drag and drop your file here</h3>
-          <p className="upload-subtitle">or click to select from your device</p>
-          <p className="upload-hint">Supported formats: PDF, DOCX, TXT (Max 100MB)</p>
+          <div className="upload-icon">⇧</div>
+          <h3 className="upload-title">Drag &amp; Drop your PDF here</h3>
+          <p className="upload-subtitle">or</p>
+          <p className="upload-hint">PDF files only (max 100MB)</p>
           
           <button
             className="upload-button"
@@ -78,8 +78,9 @@ function FileUploader({ onFileUpload, isLoading, uploadedFile }) {
             disabled={isLoading}
             type="button"
           >
-            {isLoading ? 'Processing...' : 'Browse Files'}
+            {isLoading ? 'Processing...' : 'Choose PDF File'}
           </button>
+          <p className="upload-security"><span aria-hidden="true">♙</span> Your files are secure and never stored.</p>
         </div>
       </div>
 

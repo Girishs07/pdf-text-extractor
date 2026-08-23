@@ -3,6 +3,8 @@ import './App.css';
 import FileUploader from './components/FileUploader';
 import Results from './components/Results';
 import Header from './components/Header';
+import About from './components/About';
+import HowItWorks from './components/HowItWorks';
 
 const BACKEND_URL = 'https://pdf-textextractor.onrender.com';
 
@@ -13,6 +15,7 @@ function App() {
   const [backendOnline, setBackendOnline] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activePage, setActivePage] = useState('home');
 
   // Check backend status on mount
   useEffect(() => {
@@ -139,10 +142,15 @@ function App() {
 
   return (
     <div className="app">
-      <Header backendOnline={backendOnline} />
+      <Header backendOnline={backendOnline} activePage={activePage} onNavigate={setActivePage} />
 
       <main className="main-content">
-        <section className="hero-copy">
+        {activePage === 'about' ? (
+          <About onNavigate={setActivePage} />
+        ) : activePage === 'how' ? (
+          <HowItWorks onNavigate={setActivePage} />
+        ) : <>
+        <section className="hero-copy" id="home">
           <h1>Extract Text from <span>PDF</span></h1>
           <p>Upload your PDF file and extract text content in seconds.</p>
         </section>
@@ -190,11 +198,12 @@ function App() {
           </div>
         )}
 
-        <section className="feature-row" aria-label="Product benefits">
-          <div className="feature-item"><span className="feature-icon">♢</span><div><strong>100% Secure</strong><small>Your files are safe with us</small></div></div>
-          <div className="feature-item"><span className="feature-icon">ϟ</span><div><strong>Fast Processing</strong><small>Extract text in seconds</small></div></div>
-          <div className="feature-item"><span className="feature-icon">♙</span><div><strong>No Data Stored</strong><small>Your files are never stored</small></div></div>
+        <section className="feature-row" id="about" aria-label="Product benefits">
+          <div className="feature-item"><span className="feature-icon">♢</span><div><strong>Fast &amp; Accurate</strong><small>Extract text in seconds<br />with high accuracy.</small></div></div>
+          <div className="feature-item"><span className="feature-icon">▤</span><div><strong>Secure &amp; Private</strong><small>Your files are processed<br />securely and not stored.</small></div></div>
+          <div className="feature-item" id="how-it-works"><span className="feature-icon">ϟ</span><div><strong>Works Offline / Online</strong><small>Extract text from PDFs<br />anytime, anywhere.</small></div></div>
         </section>
+        </>}
       </main>
     </div>
   );

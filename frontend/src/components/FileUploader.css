@@ -33,7 +33,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 35%, rgba(16, 163, 127, 0.06) 50%, transparent 65%);
+  background: linear-gradient(115deg, transparent 35%, rgba(104, 68, 232, 0.06) 50%, transparent 65%);
   transform: translateX(-100%);
   transition: transform 0.7s ease;
   pointer-events: none;
@@ -130,6 +130,17 @@
 
 .upload-button:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.upload-security {
+  color: #65738b;
+  font-size: 0.73rem;
+  margin: 0.35rem 0 0;
+}
+
+.upload-security span {
+  color: var(--primary);
+  margin-right: 0.35rem;
 }
 
 .upload-button:disabled {
