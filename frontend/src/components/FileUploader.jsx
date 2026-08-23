@@ -50,8 +50,6 @@ function FileUploader({ onFileUpload, isLoading, uploadedFile }) {
 
   return (
     <div className="file-uploader-section">
-      <h2 className="section-title">📁 Upload Your File</h2>
-      
       <div
         className={`file-upload-area ${dragActive ? 'active' : ''}`}
         onDragEnter={handleDrag}

@@ -6,12 +6,13 @@ function Header({ backendOnline }) {
       <div className="header-content">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-icon">📄</span>
-            <span className="logo-text">Text Extractor</span>
+            <span className="logo-icon">▤</span>
+            <span className="logo-text">PDF Text Extractor</span>
           </div>
         </div>
 
         <div className="header-right">
+          <button className="theme-button" type="button" aria-label="Toggle theme">☼</button>
           <div className="status-badge">
             <span className={`status-dot ${backendOnline ? 'online' : 'offline'}`}></span>
             <span className="status-text">

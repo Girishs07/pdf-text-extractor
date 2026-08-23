@@ -1,6 +1,11 @@
 .file-uploader-section {
-  margin: 0 auto 2rem;
-  max-width: 760px;
+  margin: 0 auto 1.65rem;
+  max-width: 700px;
+  background: #ffffff;
+  border: 1px solid #ececf4;
+  border-radius: 12px;
+  padding: 1.35rem;
+  box-shadow: 0 8px 24px rgba(31, 40, 75, 0.08);
 }
 
 .section-title {
@@ -13,10 +18,10 @@
 }
 
 .file-upload-area {
-  border: 1px solid #d9d9e3;
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
-  background: #ffffff;
+  border: 1.5px dashed #cbbaff;
+  border-radius: 9px;
+  padding: 1.8rem 2rem;
+  background: linear-gradient(135deg, #ffffff, #fcfbff);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -37,7 +42,7 @@
 .file-upload-area:hover {
   border-color: var(--primary-light);
   box-shadow: var(--shadow-md);
-  background: #fbfbfc;
+  background: #faf8ff;
 }
 
 .file-upload-area:hover::before,
@@ -47,7 +52,7 @@
 
 .file-upload-area.active {
   border-color: var(--primary);
-  background: #f0faf7;
+  background: #f5f0ff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -66,7 +71,7 @@
 }
 
 .upload-icon {
-  font-size: 2.4rem;
+  font-size: 2.35rem;
   animation: float 3s ease-in-out infinite;
   transition: transform 0.25s ease;
 }
@@ -88,7 +93,7 @@
 .upload-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-dark);
+  color: var(--primary);
   margin: 0;
 }
 
@@ -100,7 +105,7 @@
 
 .upload-hint {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: #7f8ba3;
   margin: 0.5rem 0 0 0;
 }
 
@@ -110,7 +115,7 @@
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 7px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

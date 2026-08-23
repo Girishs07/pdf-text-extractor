@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import FileUploader from './components/FileUploader';
 import Results from './components/Results';
-import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
 const BACKEND_URL = 'https://pdf-textextractor.onrender.com';
@@ -141,45 +140,62 @@ function App() {
   return (
     <div className="app">
       <Header backendOnline={backendOnline} />
-      
-      <div className="app-container">
-        <Sidebar backendOnline={backendOnline} />
-        
-        <main className="main-content">
-          <FileUploader 
-            onFileUpload={handleFileUpload} 
-            isLoading={isLoading}
+
+      <main className="main-content">
+        <section className="hero-copy">
+          <h1>Extract Text from <span>PDF</span></h1>
+          <p>Upload your PDF file and extract text content in seconds.</p>
+        </section>
+
+        <FileUploader
+          onFileUpload={handleFileUpload}
+          isLoading={isLoading}
+          uploadedFile={uploadedFile}
+        />
+
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="alert alert-success">
+            {success}
+          </div>
+        )}
+
+        {extractedText ? (
+          <Results
+            text={extractedText}
+            onDownload={downloadText}
             uploadedFile={uploadedFile}
           />
-
-          {error && (
-            <div className="alert alert-error">
-              {error}
+        ) : !isLoading && (
+          <section className="empty-result-card">
+            <div className="empty-result-header">
+              <h2>Extracted Text</h2>
+              <button className="copy-button" type="button" disabled>
+                <span aria-hidden="true">▣</span> Copy Text
+              </button>
             </div>
-          )}
+            <div className="empty-result-body">Extracted text will appear here...</div>
+          </section>
+        )}
 
-          {success && (
-            <div className="alert alert-success">
-              {success}
-            </div>
-          )}
+        {isLoading && (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p className="loading-text">Processing your file...</p>
+          </div>
+        )}
 
-          {extractedText && (
-            <Results 
-              text={extractedText} 
-              onDownload={downloadText}
-              uploadedFile={uploadedFile}
-            />
-          )}
-
-          {isLoading && (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p className="loading-text">Processing your file...</p>
-            </div>
-          )}
-        </main>
-      </div>
+        <section className="feature-row" aria-label="Product benefits">
+          <div className="feature-item"><span className="feature-icon">♢</span><div><strong>100% Secure</strong><small>Your files are safe with us</small></div></div>
+          <div className="feature-item"><span className="feature-icon">ϟ</span><div><strong>Fast Processing</strong><small>Extract text in seconds</small></div></div>
+          <div className="feature-item"><span className="feature-icon">♙</span><div><strong>No Data Stored</strong><small>Your files are never stored</small></div></div>
+        </section>
+      </main>
     </div>
   );
 }
